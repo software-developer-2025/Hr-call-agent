@@ -12,18 +12,21 @@ def get_dashboard_summary(
     company_id: UUID,
 ):
 
+    # Total batches
     total_batches = (
         db.query(func.count(CandidateBatch.id))
         .filter(CandidateBatch.company_id == company_id)
         .scalar()
     )
 
+    # Total candidates
     total_candidates = (
         db.query(func.count(Candidate.id))
         .filter(Candidate.company_id == company_id)
         .scalar()
     )
 
+    # Job status aggregation
     job_status_counts = (
         db.query(
             InterviewJob.status,
@@ -45,8 +48,19 @@ def get_dashboard_summary(
         if status in job_summary:
             job_summary[status] = count
 
+    total_jobs = sum(job_summary.values())
+
+    completion_percentage = 0
+    if total_jobs > 0:
+        completion_percentage = round(
+            (job_summary["completed"] / total_jobs) * 100,
+            2
+        )
+
     return {
         "total_batches": total_batches or 0,
         "total_candidates": total_candidates or 0,
+        "total_jobs": total_jobs,
+        "completion_percentage": completion_percentage,
         "jobs": job_summary
     }
